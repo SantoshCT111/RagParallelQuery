@@ -101,18 +101,18 @@ export default function App() {
 
       {/* Sidebar */}
       <div className={`${showSidebar ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out fixed md:relative z-10 w-72 h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto`}>
-        <div className="p-5 border-b border-gray-200">
+        <div className="p-5 border-b border-gray-200 bg-primary-50">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mr-2 text-indigo-600">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mr-2 text-primary">
               <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
             </svg>
-            RAG Chat
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">RAG Chat</span>
           </h2>
           <p className="text-sm text-gray-600 mt-1">Interact with your documents using AI</p>
         </div>
         
         {/* Upload new document - moved to top */}
-        <div className="p-5 border-b border-gray-200">
+        <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-primary-50 to-secondary-50">
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Upload Document</h3>
           <DocumentUploader onIndexed={handleDocumentIndexed} />
         </div>
@@ -159,7 +159,7 @@ export default function App() {
                 <li key={collection.name} className="group relative">
                   <div className="pr-10">
                     <button
-                      className={`w-full flex items-center p-3 text-sm rounded-md ${currentCollection === collection.name ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-600' : 'text-gray-700 hover:bg-gray-100'}`}
+                      className={`w-full flex items-center p-3 text-sm rounded-md ${currentCollection === collection.name ? 'bg-primary-50 text-primary-700 border-l-4 border-primary' : 'text-gray-700 hover:bg-gray-50'}`}
                       onClick={() => handleSelectDocument(collection)}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="flex-shrink-0 w-5 h-5 mr-3 text-gray-500">
@@ -196,7 +196,7 @@ export default function App() {
             {/* Header with document name */}
             <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center">
               <h2 className="text-xl font-medium text-gray-800 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2 text-indigo-600">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2 text-primary">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                 </svg>
                 {currentDocument}
@@ -215,11 +215,11 @@ export default function App() {
           <div className="flex items-center justify-center h-full p-4 md:p-6">
             <div className="text-center max-w-md">
               <div className="mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-16 h-16 text-indigo-300 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-16 h-16 text-primary-300 mx-auto">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
                 </svg>
               </div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-4">Welcome to RAG Chat</h2>
+              <h2 className="text-3xl font-bold text-gray-800 mb-4">Welcome to <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">RAG Chat</span></h2>
               <p className="text-gray-600 mb-8 text-lg">Upload a PDF document to start asking questions about its content.</p>
               
               {collections.length === 0 && !isLoading && !error && (

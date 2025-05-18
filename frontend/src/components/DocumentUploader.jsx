@@ -37,18 +37,22 @@ export default function DocumentUploader({ onIndexed }) {
   };
 
   return (
-    <div className="w-full space-y-3">
+    <div className="w-full space-y-4">
       <div className="relative">
         <label 
-          className={`flex flex-col items-center justify-center w-full h-32 px-4 transition-all duration-200 border-2 ${file ? 'border-indigo-300 bg-indigo-50' : 'border-dashed border-gray-300 hover:bg-gray-50'} rounded-lg cursor-pointer focus-within:border-indigo-500`}
+          className={`flex flex-col items-center justify-center w-full h-32 px-4 transition-all duration-200 border-2 ${
+            file 
+              ? 'border-primary-300 bg-primary-50' 
+              : 'border-dashed border-gray-300 hover:bg-gray-50'
+          } rounded-lg cursor-pointer focus-within:border-primary`}
         >
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             {file ? (
               <>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-indigo-600 mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-primary mb-2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                 </svg>
-                <p className="mb-1 text-sm font-medium text-indigo-600">
+                <p className="mb-1 text-sm font-medium text-primary-600">
                   {file.name}
                 </p>
                 <p className="text-xs text-gray-500">
@@ -94,7 +98,7 @@ export default function DocumentUploader({ onIndexed }) {
       {isUploading && (
         <div className="w-full bg-gray-200 rounded-full h-2.5">
           <div 
-            className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" 
+            className="bg-primary h-2.5 rounded-full transition-all duration-500" 
             style={{ width: `${uploadProgress}%` }}
           ></div>
         </div>
@@ -106,7 +110,7 @@ export default function DocumentUploader({ onIndexed }) {
         className={`w-full py-3 px-4 rounded-lg text-white font-medium transition-colors ${
           !file || isUploading 
             ? 'bg-gray-300 cursor-not-allowed' 
-            : 'bg-indigo-600 hover:bg-indigo-700 shadow-sm'
+            : 'bg-primary hover:bg-primary-dark shadow-sm'
         }`}
       >
         {isUploading ? 'Processing...' : 'Upload & Index'}
@@ -118,7 +122,7 @@ export default function DocumentUploader({ onIndexed }) {
             ? 'bg-red-50 text-red-600 border border-red-100' 
             : status.includes('success') 
               ? 'bg-green-50 text-green-600 border border-green-100' 
-              : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+              : 'bg-primary-50 text-primary-600 border border-primary-100'
         }`}>
           {status}
         </div>

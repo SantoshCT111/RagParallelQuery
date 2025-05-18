@@ -131,7 +131,7 @@ export default function ChatWindow({ currentDocument, collectionName }) {
                 <div 
                   className={`max-w-[85%] px-4 py-3 rounded-2xl shadow-sm ${
                     message.role === 'user' 
-                      ? 'bg-indigo-600 text-white rounded-tr-none' 
+                      ? 'bg-gradient-to-r from-primary to-primary-dark text-white rounded-tr-none' 
                       : 'bg-gray-100 text-gray-800 rounded-tl-none border border-gray-200'
                     } ${message.loading ? 'opacity-70' : ''}`}
                 >
@@ -175,13 +175,13 @@ export default function ChatWindow({ currentDocument, collectionName }) {
                 }}
                 disabled={loading || !documentCollection}
                 placeholder={documentCollection ? "Ask a question..." : "Please re-upload document to chat"}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                 style={{resize: 'none'}}
               />
               {!loading && query.trim() && (
                 <button
                   type="submit"
-                  className="absolute right-3 bottom-3 text-indigo-500 hover:text-indigo-700 transition-colors"
+                  className="absolute right-3 bottom-3 text-primary hover:text-primary-dark transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />

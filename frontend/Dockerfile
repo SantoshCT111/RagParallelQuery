@@ -6,17 +6,17 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies with CI=false to avoid treating warnings as errors
-RUN npm install --legacy-peer-deps
+# Install dependencies without using legacy peer deps
+RUN npm install
 
 # Copy the rest of the application
 COPY . .
 
 # Generate the Tailwind CSS
-RUN npx tailwindcss -i ./src/tailwind.css -o ./src/tailwind.output.css
+RUN npx tailwindcss -i ./src/tailwind.css -o ./src/index.css
 
 # Add a build script to rebuild Tailwind CSS on start
-RUN echo '#!/bin/sh\nnpx tailwindcss -i ./src/tailwind.css -o ./src/tailwind.output.css\nnpm start' > /app/start.sh && \
+RUN echo '#!/bin/sh\nnpx tailwindcss -i ./src/tailwind.css -o ./src/index.css\nnpm start' > /app/start.sh && \
     chmod +x /app/start.sh
 
 # Expose the port the React app runs on
