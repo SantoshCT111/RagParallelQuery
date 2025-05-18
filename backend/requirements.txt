@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+openai
+langchain-community
+langchain-openai
+langchain-qdrant
+langchain-text-splitter
+python-dotenv
