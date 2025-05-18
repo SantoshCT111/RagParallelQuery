@@ -1,4 +1,4 @@
-from fastapi impott APIRouter
+from fastapi import APIRouter
 from openai import OpenAI
 from app.core.config import settings
 from app.services.vector_store import retrieve
@@ -8,7 +8,8 @@ router = APIRouter()
 client = OpenAI(api_key=settings.openai_api_key)
 
 @router.post("/rag")
-async def rag_query(question : str):
+async def rag_query(request: dict):
+    question = request.get("question", "")
     texts, pages = retrieve(question)
     context = "\n".join(texts)
     system_prompt = (

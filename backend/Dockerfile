@@ -7,6 +7,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create uploads directory with proper permissions
+RUN mkdir -p /app/uploads && chmod 777 /app/uploads
+
 # Copy environment variables and source code
 COPY .env .
 COPY app ./app

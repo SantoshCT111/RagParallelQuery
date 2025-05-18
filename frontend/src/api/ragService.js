@@ -16,3 +16,36 @@ export async function askRag(question) {
   if (!res.ok) throw new Error('Query failed');
   return res.json();
 }
+
+// Chat history storage functions
+export function saveChatHistory(filename, chatHistory) {
+  localStorage.setItem(`chat_${filename}`, JSON.stringify(chatHistory));
+}
+
+export function loadChatHistory(filename) {
+  const saved = localStorage.getItem(`chat_${filename}`);
+  return saved ? JSON.parse(saved) : [];
+}
+
+export function getAllChatHistories() {
+  const histories = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('chat_')) {
+      const filename = key.replace('chat_', '');
+      histories[filename] = JSON.parse(localStorage.getItem(key));
+    }
+  }
+  return histories;
+}
+
+export function getDocumentList() {
+  const documents = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('chat_')) {
+      documents.push(key.replace('chat_', ''));
+    }
+  }
+  return documents;
+}

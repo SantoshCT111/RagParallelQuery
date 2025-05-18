@@ -6,3 +6,6 @@ langchain-openai
 langchain-qdrant
 langchain-text-splitters
 python-dotenv
+pydantic-settings
+python-multipart
+pypdf

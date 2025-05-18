@@ -46,3 +46,49 @@ ENV/
 
 # Local development settings
 instance/
+
+# Uploaded files
+backend/uploads/
+uploads/
+*.pdf
+
+# Vector database and storage
+qdrant_data/
+backend/data/
+data/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend build artifacts
+frontend/build/
+frontend/node_modules/
+node_modules/
+
+# Docker volumes
+volume/
+volumes/
+
+# Large media files
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.tif
+*.tiff
+
+# Generated files
+.generated/
+.cache/
+.temp/
+
+# Local storage files (chat history, etc.)
+localStorage/
