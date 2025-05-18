@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: ${DOCKER_REGISTRY}/rag-chat-frontend:${TAG:-latest}
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - rag-network
+
+  backend:
+    image: ${DOCKER_REGISTRY}/rag-chat-backend:${TAG:-latest}
+    restart: always
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+    volumes:
+      - pdf_uploads:/app/uploads
+    depends_on:
+      - qdrant
+    networks:
+      - rag-network
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: always
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT_ALLOW_CREDENTIALS_IN_GET_REQUESTS=true
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/readiness"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:stable-alpine
+    restart: always
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/www:/var/www/html
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - rag-network
+
+volumes:
+  qdrant_data:
+    driver: local
+  pdf_uploads:
+    driver: local
+
+networks:
+  rag-network:
+    driver: bridge 
