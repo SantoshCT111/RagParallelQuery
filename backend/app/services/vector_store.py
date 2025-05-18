@@ -9,7 +9,7 @@ from uuid import uuid4
 from datetime import datetime, UTC
 import logging
 import re
-
+from app.utils.similarQuery import generate_similar_queries
 # Shared Qdrant client and embedding model (initialized once per server process)
 _client = QdrantClient(
     url=settings.qdrant_url,
@@ -71,10 +71,15 @@ def init_store_for_pdf(pdf_path: Path):
         logging.error(f"Error in init_store_for_pdf: {str(e)}")
         raise
 
+"""i am gonna use fanout method there 
+fan out method is used to generate a lots of similar query from user query 
+and tthose query will embeded and then similar document from that will be acced from all
+and all those document will be used to answer the user query"""
 
 def retrieve(query: str, collection_name: str, k: int=5):
     """
     Retrieve relevant documents from a collection based on a query.
+    i am gonna use fanout method there 
     
     Args:
         query: The search query
@@ -94,12 +99,29 @@ def retrieve(query: str, collection_name: str, k: int=5):
             collection_name=collection_name,
             embedding=_embedding_model
         )
-    
-        results = store.similarity_search(query, k=k)
-        texts = [r.page_content for r in results]
-        pages = [r.metadata.get("page") for r in results]
-        metas = [r.metadata for r in results]
+        #generate similar queries
+
+        similar_queries = generate_similar_queries(query, num_queries=5)
+        print([x for x in similar_queries])
+
+        #search for each similar query
+        all_results = []
+        for sim_q in similar_queries:
+            result = store.similarity_search(sim_q, k=k)
+            all_results.extend(result)
+        
+
+        #get unique results
+        unique_by_source = {doc.metadata["source"]: doc for doc in all_results}
+        unique_results = list(unique_by_source.values())
+
+        #extract texts, pages, and metadata
+        texts = [r.page_content for r in unique_results]
+        pages = [r.metadata.get("page") for r in unique_results]
+        metas = [r.metadata for r in unique_results]
+
         return texts, pages, metas
+        
     except Exception as e:
         logging.error(f"Error in retrieve function: {str(e)}")
         raise
