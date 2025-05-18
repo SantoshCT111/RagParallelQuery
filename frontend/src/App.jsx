@@ -111,6 +111,12 @@ export default function App() {
           <p className="text-sm text-gray-600 mt-1">Interact with your documents using AI</p>
         </div>
         
+        {/* Upload new document - moved to top */}
+        <div className="p-5 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Upload Document</h3>
+          <DocumentUploader onIndexed={handleDocumentIndexed} />
+        </div>
+        
         {/* Document list */}
         <div className="p-5">
           <div className="flex items-center justify-between mb-3">
@@ -145,47 +151,41 @@ export default function App() {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-gray-400 mx-auto mb-2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
               </svg>
-              <p className="text-gray-600">No documents yet. Upload one to get started.</p>
+              <p className="text-gray-600">No documents yet.</p>
             </div>
           ) : (
             <ul className="mt-2 space-y-1">
               {collections.map(collection => (
-                <li key={collection.name} className="group">
-                  <div className="flex items-center">
+                <li key={collection.name} className="group relative">
+                  <div className="pr-10">
                     <button
-                      className={`flex-grow flex items-center p-3 text-sm rounded-md ${currentCollection === collection.name ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-600' : 'text-gray-700 hover:bg-gray-100'}`}
+                      className={`w-full flex items-center p-3 text-sm rounded-md ${currentCollection === collection.name ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-600' : 'text-gray-700 hover:bg-gray-100'}`}
                       onClick={() => handleSelectDocument(collection)}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-3 text-gray-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="flex-shrink-0 w-5 h-5 mr-3 text-gray-500">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                       </svg>
-                      <div className="flex flex-col">
-                        <span className="truncate font-medium">{collection.display_name}</span>
+                      <div className="flex-1 min-w-0 mr-2">
+                        <span className="block truncate font-medium">{collection.display_name}</span>
                         {collection.vectors_count > 0 && (
                           <span className="text-xs text-gray-500">{collection.vectors_count} chunks</span>
                         )}
                       </div>
                     </button>
-                    <button
-                      onClick={() => handleDeleteDocument(collection)}
-                      className="p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Delete document"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                      </svg>
-                    </button>
                   </div>
+                  <button
+                    onClick={() => handleDeleteDocument(collection)}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete document"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                  </button>
                 </li>
               ))}
             </ul>
           )}
-        </div>
-        
-        {/* Upload new document */}
-        <div className="p-5 mt-auto border-t border-gray-200">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Upload Document</h3>
-          <DocumentUploader onIndexed={handleDocumentIndexed} />
         </div>
       </div>
 
