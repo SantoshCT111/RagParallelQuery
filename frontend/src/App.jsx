@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DocumentUploader from './components/DocumentUploader';
 import ChatWindow from './components/ChatWindow';
-import { getDocumentList, loadChatHistory } from './api/ragService';
+import { getDocumentList, loadChatHistory, fetchCollections, deleteCollection, removeChatHistory } from './api/ragService';
 import './App.css';
 
 export default function App() {
@@ -9,22 +9,37 @@ export default function App() {
   const [currentDocument, setCurrentDocument] = useState(null);
   const [currentCollection, setCurrentCollection] = useState(null);
   const [documentList, setDocumentList] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showSidebar, setShowSidebar] = useState(window.innerWidth > 768);
 
-  // Load documents list from localStorage on mount
+  // Load documents list from the backend API
   useEffect(() => {
-    const documents = getDocumentList();
-    setDocumentList(documents);
-    if (documents.length > 0) {
-      setIndexed(true);
-    }
+    const loadCollections = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await fetchCollections();
+        setCollections(result.collections);
+        if (result.collections.length > 0) {
+          setIndexed(true);
+        }
+      } catch (err) {
+        console.error("Failed to load collections:", err);
+        setError("Failed to load collections. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCollections();
   }, []);
 
   // Handle document selection
-  const handleSelectDocument = (document) => {
-    const chatData = loadChatHistory(document);
-    setCurrentDocument(document);
-    setCurrentCollection(chatData.collection_name);
+  const handleSelectDocument = (collection) => {
+    setCurrentDocument(collection.display_name);
+    setCurrentCollection(collection.name);
     setIndexed(true);
   };
 
@@ -33,12 +48,40 @@ export default function App() {
     setCurrentDocument(filename);
     setCurrentCollection(collectionName);
     setIndexed(true);
-    setDocumentList(prev => {
-      if (!prev.includes(filename)) {
-        return [...prev, filename];
-      }
-      return prev;
+    
+    // Refresh collections
+    fetchCollections().then(result => {
+      setCollections(result.collections);
+    }).catch(err => {
+      console.error("Failed to refresh collections:", err);
     });
+  };
+
+  // Handle document deletion
+  const handleDeleteDocument = async (collection) => {
+    if (window.confirm(`Are you sure you want to delete "${collection.display_name}"? This cannot be undone.`)) {
+      try {
+        await deleteCollection(collection.name);
+        // Remove from local storage if exists
+        removeChatHistory(collection.display_name);
+        
+        // Refresh collections list
+        const result = await fetchCollections();
+        setCollections(result.collections);
+        
+        // If the deleted collection was the current one, reset the view
+        if (collection.name === currentCollection) {
+          setCurrentDocument(null);
+          setCurrentCollection(null);
+          if (result.collections.length === 0) {
+            setIndexed(false);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to delete collection:", err);
+        alert("Failed to delete document. Please try again.");
+      }
+    }
   };
 
   // Toggle sidebar for mobile
@@ -66,18 +109,53 @@ export default function App() {
         {/* Document list */}
         <div className="p-4">
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Documents</h3>
-          <ul className="mt-2 space-y-1">
-            {documentList.map(doc => (
-              <li key={doc} className="group">
-                <button
-                  className={`w-full flex items-center px-2 py-2 text-sm rounded-md ${currentDocument === doc ? 'bg-indigo-100 text-indigo-800' : 'text-gray-700 hover:bg-gray-100'}`}
-                  onClick={() => handleSelectDocument(doc)}
-                >
-                  <span className="truncate">{doc}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          
+          {isLoading ? (
+            <div className="mt-2 text-center py-4">
+              <div className="animate-pulse text-gray-400">Loading...</div>
+            </div>
+          ) : error ? (
+            <div className="mt-2 text-center py-4">
+              <div className="text-red-500">{error}</div>
+              <button 
+                onClick={() => fetchCollections().then(r => setCollections(r.collections)).catch(e => setError(e.message))}
+                className="mt-2 text-sm text-indigo-600 hover:text-indigo-800"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : collections.length === 0 ? (
+            <div className="mt-2 text-center py-4 text-gray-500">
+              No documents yet. Upload one to get started.
+            </div>
+          ) : (
+            <ul className="mt-2 space-y-1">
+              {collections.map(collection => (
+                <li key={collection.name} className="group">
+                  <div className="flex items-center">
+                    <button
+                      className={`flex-grow flex items-center px-2 py-2 text-sm rounded-md ${currentCollection === collection.name ? 'bg-indigo-100 text-indigo-800' : 'text-gray-700 hover:bg-gray-100'}`}
+                      onClick={() => handleSelectDocument(collection)}
+                    >
+                      <span className="truncate">{collection.display_name}</span>
+                      {collection.vectors_count > 0 && (
+                        <span className="ml-2 text-xs text-gray-500">({collection.vectors_count})</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteDocument(collection)}
+                      className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete document"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                      </svg>
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         
         {/* Upload new document */}
@@ -112,7 +190,7 @@ export default function App() {
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Welcome to RAG Chat</h2>
                 <p className="text-gray-600 mb-6">Upload a PDF document to get started, or select an existing document from the sidebar.</p>
                 
-                {documentList.length === 0 && (
+                {collections.length === 0 && !isLoading && !error && (
                   <div className="mt-4 p-6 border-2 border-dashed border-gray-300 rounded-lg">
                     <DocumentUploader onIndexed={handleDocumentIndexed} />
                   </div>

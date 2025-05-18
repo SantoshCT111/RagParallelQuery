@@ -20,6 +20,20 @@ export async function askRag(question, collectionName) {
   return res.json();
 }
 
+export async function fetchCollections() {
+  const res = await fetch('/api/collections');
+  if (!res.ok) throw new Error('Failed to fetch collections');
+  return res.json();
+}
+
+export async function deleteCollection(collectionName) {
+  const res = await fetch(`/api/collection/${collectionName}`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) throw new Error('Failed to delete collection');
+  return res.json();
+}
+
 // Chat history storage functions
 export function saveChatHistory(filename, chatHistory, collectionName) {
   localStorage.setItem(`chat_${filename}`, JSON.stringify({
@@ -61,4 +75,8 @@ export function getDocumentList() {
     }
   }
   return documents;
+}
+
+export function removeChatHistory(filename) {
+  localStorage.removeItem(`chat_${filename}`);
 }

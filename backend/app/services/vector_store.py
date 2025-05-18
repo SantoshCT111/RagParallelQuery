@@ -8,6 +8,7 @@ from app.core.config import settings
 from uuid import uuid4
 from datetime import datetime, UTC
 import logging
+import re
 
 # Shared Qdrant client and embedding model (initialized once per server process)
 _client = QdrantClient(
@@ -101,6 +102,60 @@ def retrieve(query: str, collection_name: str, k: int=5):
         return texts, pages, metas
     except Exception as e:
         logging.error(f"Error in retrieve function: {str(e)}")
+        raise
+
+def delete_collection(collection_name: str):
+    """
+    Delete a collection from Qdrant.
+    
+    Args:
+        collection_name: The name of the collection to delete
+        
+    Returns:
+        bool: True if successful
+    """
+    try:
+        client = get_client()
+        client.delete_collection(collection_name=collection_name)
+        logging.info(f"Successfully deleted collection: {collection_name}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to delete collection {collection_name}: {str(e)}")
+        raise
+
+def list_collections():
+    """
+    List all collections in Qdrant.
+    
+    Returns:
+        List of collection information with display names 
+    """
+    try:
+        client = get_client()
+        collections_info = client.get_collections().collections
+        
+        # Extract original filename from collection names (format: filename-uuid)
+        result = []
+        for collection_info in collections_info:
+            name = collection_info.name
+            
+            # Try to extract the original filename part
+            match = re.match(r"(.*)-[a-f0-9]+$", name)
+            display_name = match.group(1) if match else name
+            
+            # Get collection details including vector count
+            collection_details = client.get_collection(collection_name=name)
+            vectors_count = collection_details.vectors_count if hasattr(collection_details, "vectors_count") else 0
+            
+            result.append({
+                "name": name,  # Full collection name for API calls
+                "display_name": display_name,  # Original filename part for display
+                "vectors_count": vectors_count
+            })
+            
+        return result
+    except Exception as e:
+        logging.error(f"Failed to list collections: {str(e)}")
         raise
 
 
