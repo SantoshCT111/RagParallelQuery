@@ -4,5 +4,5 @@ openai
 langchain-community
 langchain-openai
 langchain-qdrant
-langchain-text-splitter
+langchain-text-splitters
 python-dotenv
