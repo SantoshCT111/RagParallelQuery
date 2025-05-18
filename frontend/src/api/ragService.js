@@ -7,24 +7,37 @@ export async function uploadPdf(file) {
   return res.json();
 }
 
-export async function askRag(question) {
+export async function askRag(question, collectionName) {
   const res = await fetch('/api/rag', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ 
+      question,
+      collection_name: collectionName 
+    }),
   });
   if (!res.ok) throw new Error('Query failed');
   return res.json();
 }
 
 // Chat history storage functions
-export function saveChatHistory(filename, chatHistory) {
-  localStorage.setItem(`chat_${filename}`, JSON.stringify(chatHistory));
+export function saveChatHistory(filename, chatHistory, collectionName) {
+  localStorage.setItem(`chat_${filename}`, JSON.stringify({
+    messages: chatHistory,
+    collection_name: collectionName
+  }));
 }
 
 export function loadChatHistory(filename) {
   const saved = localStorage.getItem(`chat_${filename}`);
-  return saved ? JSON.parse(saved) : [];
+  if (!saved) return { messages: [], collection_name: null };
+  
+  const parsed = JSON.parse(saved);
+  // Handle legacy format (just an array of messages)
+  if (Array.isArray(parsed)) {
+    return { messages: parsed, collection_name: null };
+  }
+  return parsed;
 }
 
 export function getAllChatHistories() {
@@ -33,7 +46,7 @@ export function getAllChatHistories() {
     const key = localStorage.key(i);
     if (key.startsWith('chat_')) {
       const filename = key.replace('chat_', '');
-      histories[filename] = JSON.parse(localStorage.getItem(key));
+      histories[filename] = loadChatHistory(filename);
     }
   }
   return histories;

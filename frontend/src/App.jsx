@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import DocumentUploader from './components/DocumentUploader';
 import ChatWindow from './components/ChatWindow';
-import { getDocumentList } from './api/ragService';
+import { getDocumentList, loadChatHistory } from './api/ragService';
 import './App.css';
 
 export default function App() {
   const [indexed, setIndexed] = useState(false);
   const [currentDocument, setCurrentDocument] = useState(null);
+  const [currentCollection, setCurrentCollection] = useState(null);
   const [documentList, setDocumentList] = useState([]);
   const [showSidebar, setShowSidebar] = useState(window.innerWidth > 768);
 
@@ -21,15 +22,23 @@ export default function App() {
 
   // Handle document selection
   const handleSelectDocument = (document) => {
+    const chatData = loadChatHistory(document);
     setCurrentDocument(document);
+    setCurrentCollection(chatData.collection_name);
     setIndexed(true);
   };
 
   // Handle new document indexed
-  const handleDocumentIndexed = (filename) => {
+  const handleDocumentIndexed = (filename, collectionName) => {
     setCurrentDocument(filename);
+    setCurrentCollection(collectionName);
     setIndexed(true);
-    setDocumentList(prev => [...prev, filename]);
+    setDocumentList(prev => {
+      if (!prev.includes(filename)) {
+        return [...prev, filename];
+      }
+      return prev;
+    });
   };
 
   // Toggle sidebar for mobile
@@ -90,7 +99,10 @@ export default function App() {
                   <h2 className="text-lg font-medium text-gray-800">Chatting with: {currentDocument}</h2>
                 </div>
                 <div className="p-4">
-                  <ChatWindow currentDocument={currentDocument} />
+                  <ChatWindow 
+                    currentDocument={currentDocument}
+                    collectionName={currentCollection}
+                  />
                 </div>
               </div>
             </div>

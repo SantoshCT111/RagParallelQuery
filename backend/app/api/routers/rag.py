@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from openai import OpenAI
 from app.core.config import settings
 from app.services.vector_store import retrieve
@@ -33,12 +33,35 @@ def build_messages(question : str ,context : str ,pages: str):
 
 @router.post("/rag")
 async def rag_query(request: dict):
-    question = request.get("question", "")
-    texts, pages = retrieve(question)
+    question = request.get("question")
+    collection_name = request.get("collection_name")
+    if not question or not collection_name:
+        raise HTTPException(status_code=400, detail="Both 'question' and 'collection_name' are required.")
+    
+     # Retrieve top-k relevant chunks from the specified collection
+    texts, pages, metas = retrieve(question, collection_name)
+
+     # Build a single context string and page list
     context = "\n".join(texts)
-    messages = build_messages(question, context, pages)
-    resp = client.chat.completions.create(model="gpt-4o", messages=messages)
+    pages_str = ", ".join(str(p) for p in pages if p is not None)
+
+     # Build prompt messages
+    messages = build_messages(question, context, pages_str)
+
+     # Call the LLM
+    resp = client.chat.completions.create(
+        model="gpt-4o",
+        messages=messages
+    )
+
+    # Update conversation history
     conversation_history.append({"role": "user", "content": question})
     conversation_history.append({"role": "assistant", "content": resp.choices[0].message.content})
-   
-    return {"answer": resp.choices[0].message.content, "pages": pages}
+
+
+
+    return {
+        "answer": resp.choices[0].message.content,
+        "pages": pages,
+        "collection_name": collection_name
+    }

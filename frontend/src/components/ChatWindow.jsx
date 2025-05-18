@@ -1,26 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { askRag, saveChatHistory, loadChatHistory } from '../api/ragService';
 
-export default function ChatWindow({ currentDocument }) {
+export default function ChatWindow({ currentDocument, collectionName }) {
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [documentCollection, setDocumentCollection] = useState(collectionName);
   const messagesEndRef = useRef(null);
 
   // Load chat history when the document changes
   useEffect(() => {
     if (currentDocument) {
-      const savedMessages = loadChatHistory(currentDocument);
-      setMessages(savedMessages);
+      const chatData = loadChatHistory(currentDocument);
+      setMessages(chatData.messages);
+      // If we have a collection name from props, use it, otherwise use from storage
+      setDocumentCollection(collectionName || chatData.collection_name);
     }
-  }, [currentDocument]);
+  }, [currentDocument, collectionName]);
 
   // Save chat history whenever messages change
   useEffect(() => {
     if (currentDocument && messages.length > 0) {
-      saveChatHistory(currentDocument, messages);
+      saveChatHistory(currentDocument, messages, documentCollection);
     }
-  }, [messages, currentDocument]);
+  }, [messages, currentDocument, documentCollection]);
 
   // Auto-scroll to the bottom of the chat
   useEffect(() => {
@@ -29,7 +32,7 @@ export default function ChatWindow({ currentDocument }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    if (!query.trim() || !documentCollection) return;
 
     // Add user message to chat
     const userMessage = { role: 'user', content: query };
@@ -49,7 +52,7 @@ export default function ChatWindow({ currentDocument }) {
     }]);
     
     try {
-      const data = await askRag(userMessage.content);
+      const data = await askRag(userMessage.content, documentCollection);
       
       // Replace thinking indicator with actual response
       setMessages(prev => prev.map(msg => 
@@ -72,12 +75,18 @@ export default function ChatWindow({ currentDocument }) {
   const clearChat = () => {
     if (window.confirm('Are you sure you want to clear the chat history?')) {
       setMessages([]);
-      saveChatHistory(currentDocument, []);
+      saveChatHistory(currentDocument, [], documentCollection);
     }
   };
 
   return (
     <div className="flex flex-col h-[70vh]">
+      {!documentCollection && (
+        <div className="bg-yellow-100 text-yellow-800 p-3 rounded mb-3">
+          This document was uploaded with an older version. Please re-upload it to enable chat functionality.
+        </div>
+      )}
+      
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto mb-4 space-y-4">
         {messages.length === 0 ? (
@@ -123,15 +132,15 @@ export default function ChatWindow({ currentDocument }) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            disabled={loading}
-            placeholder="Ask a question about your document..."
+            disabled={loading || !documentCollection}
+            placeholder={documentCollection ? "Ask a question about your document..." : "Please re-upload document to chat"}
             className="flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
           <button
             type="submit"
-            disabled={loading || !query.trim()}
+            disabled={loading || !query.trim() || !documentCollection}
             className={`px-4 py-2 rounded-md text-white font-medium focus:outline-none ${
-              loading || !query.trim()
+              loading || !query.trim() || !documentCollection
                 ? 'bg-gray-300 cursor-not-allowed'
                 : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
             }`}

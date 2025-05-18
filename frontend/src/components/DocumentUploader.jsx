@@ -11,9 +11,9 @@ export default function DocumentUploader({ onIndexed }) {
     setIsUploading(true);
     setStatus('Uploading and indexing...');
     try {
-      await uploadPdf(file);
+      const response = await uploadPdf(file);
       setStatus('Indexed successfully!');
-      onIndexed(file.name);
+      onIndexed(file.name, response.collection_name);
     } catch (e) {
       setStatus('Error: ' + e.message);
     } finally {
