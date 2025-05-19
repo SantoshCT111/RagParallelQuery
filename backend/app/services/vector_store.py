@@ -129,12 +129,15 @@ def retrieve(query: str, collection_name: str, k: int=5, rrf_k: int=60):
         #now we sort the document by RRF score in descending order
 
         ranked_docs = sorted(dict_results.items(),key=lambda x: x[1],reverse=True)
+        print("ranked_docs",ranked_docs)
         ranked_docIds = [doc_id for doc_id, _ in ranked_docs]
+        print("ranked_docIds",ranked_docIds)
 
-        #we get the unique results
+        #we get the unique results - CHANGE FROM SET TO LIST TO FIX UNHASHABLE TYPE ERROR
         unique_by_source = {doc.metadata["source"]: doc for doc in all_results}
-        unique_results = {unique_by_source[doc_id] for doc_id in ranked_docIds if doc_id in unique_by_source}
-
+        print("unique_by_source",unique_by_source)
+        unique_results = [unique_by_source[doc_id] for doc_id in ranked_docIds if doc_id in unique_by_source]
+        print("unique_results",unique_results)   
          # Extract texts, pages, and metadata
         texts = [r.page_content for r in unique_results]
         pages = [r.metadata.get("page") for r in unique_results]
