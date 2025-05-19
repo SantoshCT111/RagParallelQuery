@@ -9,6 +9,8 @@ from uuid import uuid4
 from datetime import datetime, UTC
 import logging
 import re
+from app.utils.query_decomposer import decompose_query
+from openai import OpenAI
 
 # Shared Qdrant client and embedding model (initialized once per server process)
 _client = QdrantClient(
@@ -16,15 +18,12 @@ _client = QdrantClient(
     api_key=getattr(settings, "qdrant_api_key", None)
 )
 
+gpt = OpenAI(api_key=settings.openai_api_key)
 
 _embedding_model = get_embedding_model()
 
 def get_client():
     return _client
-
-
-
-
 
 def init_store_for_pdf(pdf_path: Path):
     """
@@ -71,6 +70,41 @@ def init_store_for_pdf(pdf_path: Path):
         logging.error(f"Error in init_store_for_pdf: {str(e)}")
         raise
 
+base_prompt = (
+        """You are a helpful assistant. Answer based on the context below.
+        so u would be given a subquery and try to find short and concise answer from the context
+        u need to be very specific and to the point
+        u need to be very friendly and engaging
+        u need to be very helpful and informative
+        u need to be very accurate and precise
+        u need to be very consistent and reliable
+        u need to be very professional and courteous
+        dont give long answers casue we are gonna use this for context again
+   
+        
+        """
+        
+    )
+answers = []
+
+# Maximum number of messages to keep in conversation history
+MAX_HISTORY_MESSAGES = 10
+conversation_history = []
+
+def build_messages(question: str, context: str, pages: str):
+    system_prompt = f"{base_prompt} context : {context} pages : {pages} "
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+    ]
+    
+    # Add only the most recent conversation history
+    if conversation_history:
+        messages.extend(conversation_history[-MAX_HISTORY_MESSAGES:])
+        
+    messages.append({"role": "user", "content": question})
+    return messages
+
 
 def retrieve(query: str, collection_name: str, k: int=5):
     """
@@ -82,9 +116,17 @@ def retrieve(query: str, collection_name: str, k: int=5):
         k: Number of results to return (default: 5)
         
     Returns:
-        Tuple of (texts, pages, metadata)
+        List of answer strings
     """
     try:
+        # Reset answers for new query
+        global answers
+        answers = []
+        
+        # Avoid processing very short queries
+        if not query or len(query.strip()) <= 2:
+            return ["Please provide a more detailed question to get a helpful response."]
+            
         # Reuse the existing global client instead of creating a new one
         client = get_client()
         
@@ -94,12 +136,63 @@ def retrieve(query: str, collection_name: str, k: int=5):
             collection_name=collection_name,
             embedding=_embedding_model
         )
-    
-        results = store.similarity_search(query, k=k)
-        texts = [r.page_content for r in results]
-        pages = [r.metadata.get("page") for r in results]
-        metas = [r.metadata for r in results]
-        return texts, pages, metas
+
+        # Get decomposed sub-queries
+        sub_queries = decompose_query(query)
+        context = ""
+
+        for sub_query in sub_queries:
+            # Skip very short sub-queries
+            if len(sub_query.strip()) <= 2:
+                continue
+                
+            print("sub_query : ", sub_query)
+            
+            # Get similar documents from vector store
+            results = store.similarity_search(sub_query + " " + context, k=k)
+            print("results : ", results)
+            
+            # If no results found, continue to next sub-query
+            if not results:
+                continue
+                
+            texts = [r.page_content for r in results]
+            pages = [r.metadata.get("page") for r in results]
+            
+            # Build context string and page list
+            context = "\n".join(texts)
+            pages_str = ", ".join(str(p) for p in pages if p is not None)
+            
+            # Build messages and get response
+            messages = build_messages(sub_query, context, pages_str)
+            
+            try:
+                response = gpt.chat.completions.create(
+                    model="gpt-4o",
+                    messages=messages
+                )
+                
+                response_content = response.choices[0].message.content
+                print("assistant response : ", response_content)
+                
+                # Update conversation history (limited to most recent exchanges)
+                global conversation_history
+                conversation_history.append({"role": "user", "content": sub_query})
+                conversation_history.append({"role": "assistant", "content": response_content})
+                
+                # Keep only the most recent messages
+                if len(conversation_history) > MAX_HISTORY_MESSAGES * 2:
+                    conversation_history = conversation_history[-MAX_HISTORY_MESSAGES * 2:]
+                    
+                answers.append(response_content)
+            except Exception as e:
+                logging.error(f"Error in GPT call: {str(e)}")
+                
+        # If no answers were generated, provide a fallback
+        if not answers:
+            return ["I couldn't find specific information to answer your question. Please try rephrasing or asking about a different topic."]
+            
+        return answers
     except Exception as e:
         logging.error(f"Error in retrieve function: {str(e)}")
         raise

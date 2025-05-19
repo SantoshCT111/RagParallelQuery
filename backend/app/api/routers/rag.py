@@ -20,9 +20,8 @@ base_prompt = (
         
     )
 conversation_history = []
-def build_messages(question : str ,context : str ,pages: str):
-    system_prompt =  f"{base_prompt} context : {context} pages : {pages} "
-
+def build_messages(question : str ,context : str ):
+    system_prompt =  f"{base_prompt} context : {context} "
     messages = [
         {"role": "system", "content": system_prompt},
       
@@ -39,14 +38,14 @@ async def rag_query(request: dict):
         raise HTTPException(status_code=400, detail="Both 'question' and 'collection_name' are required.")
     
      # Retrieve top-k relevant chunks from the specified collection
-    texts, pages, metas = retrieve(question, collection_name)
+    texts = retrieve(question, collection_name)
 
      # Build a single context string and page list
     context = "\n".join(texts)
-    pages_str = ", ".join(str(p) for p in pages if p is not None)
+  
 
      # Build prompt messages
-    messages = build_messages(question, context, pages_str)
+    messages = build_messages(question, context)
 
      # Call the LLM
     resp = client.chat.completions.create(
@@ -62,6 +61,6 @@ async def rag_query(request: dict):
 
     return {
         "answer": resp.choices[0].message.content,
-        "pages": pages,
+      
         "collection_name": collection_name
     }
