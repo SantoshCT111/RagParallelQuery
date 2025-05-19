@@ -71,15 +71,14 @@ def init_store_for_pdf(pdf_path: Path):
         logging.error(f"Error in init_store_for_pdf: {str(e)}")
         raise
 
-"""i am gonna use fanout method there 
-fan out method is used to generate a lots of similar query from user query 
-and tthose query will embeded and then similar document from that will be acced from all
-and all those document will be used to answer the user query"""
+"""i am gonna use resiporcate ranking  method here .
+in this method we will use fanout but the results will ranked by vote algo that is 
+v = 1/(k + rank(d)) where rank(d) gives the ranking and k is a number  of list of results"""
 
-def retrieve(query: str, collection_name: str, k: int=5):
+def retrieve(query: str, collection_name: str, k: int=5, rrf_k: int=60):
     """
     Retrieve relevant documents from a collection based on a query.
-    i am gonna use fanout method there 
+    i am gonna use fanout method there  
     
     Args:
         query: The search query
@@ -104,23 +103,60 @@ def retrieve(query: str, collection_name: str, k: int=5):
         similar_queries = generate_similar_queries(query, num_queries=5)
         print([x for x in similar_queries])
 
-        #search for each similar query
+        #we created a list to store all the results
+
         all_results = []
+        #we created a dictionary to store doc_id and score
+        dict_results = {}
+
+        #we iterate over the similar queries
         for sim_q in similar_queries:
-            result = store.similarity_search(sim_q, k=k)
-            all_results.extend(result)
+            result = store.similarity_search(sim_q,k=k)
+
+            #we iterate over the results
+            for rank, doc in enumerate(result,start=1):
+                doc_id = doc.metadata["source"]
+
+                #if the doc_id is not in the dictionary, we add it and set the score to 0
+                if doc_id not in dict_results:
+                    dict_results[doc_id] = 0
+                #we add the score to the dictionary
+                dict_results[doc_id] += 1/(rrf_k + rank)
         
+        #we extend the all_results list with the results
+        all_results.extend(result)
 
-        #get unique results
+        #now we sort the document by RRF score in descending order
+
+        ranked_docs = sorted(dict_results.items(),key=lambda x: x[1],reverse=True)
+        ranked_docIds = [doc_id for doc_id, _ in ranked_docs]
+
+        #we get the unique results
         unique_by_source = {doc.metadata["source"]: doc for doc in all_results}
-        unique_results = list(unique_by_source.values())
+        unique_results = {unique_by_source[doc_id] for doc_id in ranked_docIds if doc_id in unique_by_source}
 
-        #extract texts, pages, and metadata
+         # Extract texts, pages, and metadata
         texts = [r.page_content for r in unique_results]
         pages = [r.metadata.get("page") for r in unique_results]
         metas = [r.metadata for r in unique_results]
 
         return texts, pages, metas
+
+        
+
+
+
+    
+
+                
+
+
+
+            
+            
+
+            
+            
         
     except Exception as e:
         logging.error(f"Error in retrieve function: {str(e)}")

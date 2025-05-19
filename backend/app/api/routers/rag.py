@@ -31,6 +31,8 @@ def build_messages(question : str ,context : str ,pages: str):
     messages.append({"role": "user", "content": question})
     return messages
 
+
+
 @router.post("/rag")
 async def rag_query(request: dict):
     question = request.get("question")
