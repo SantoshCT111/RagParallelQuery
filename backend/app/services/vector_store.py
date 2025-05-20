@@ -9,6 +9,8 @@ from uuid import uuid4
 from datetime import datetime, UTC
 import logging
 import re
+from app.utils.url_loader import load_and_split_multiple_urls
+from app.utils.findUrls import find_urls
 
 # Shared Qdrant client and embedding model (initialized once per server process)
 _client = QdrantClient(
@@ -23,7 +25,43 @@ def get_client():
     return _client
 
 
+def init_store_for_url(url: str):
+    """
+    Initialize the Qdrant vector store with the contents of a URL.
+    """
+    try:
+        client = get_client()
+        collection_name = f"{url}-{uuid4().hex}"
 
+        # Create a new collection
+        client.recreate_collection(
+            collection_name=collection_name,
+            vectors_config=models.VectorParams(
+                size=3072,  # OpenAI embeddings-3 models use 3072 dimensions
+                distance=models.Distance.COSINE
+            ),
+            shard_number=1
+        )
+
+        # Load the URL content  
+        docs = load_and_split_multiple_urls(find_urls(url))
+        logging.info(f"Split URL into {len(docs)} chunks")
+
+        # Use LangChain's from_documents to properly add documents with embeddings
+        store = QdrantVectorStore.from_documents(
+            documents=docs,
+            embedding=_embedding_model,
+            collection_name=collection_name,
+            url=settings.qdrant_url,
+            api_key=getattr(settings, "qdrant_api_key", None)
+        )
+
+        logging.info(f"Successfully added {len(docs)} documents to collection {collection_name}")   
+    
+        return collection_name
+    except Exception as e:
+        logging.error(f"Error in init_store_for_url: {str(e)}")
+        raise
 
 
 def init_store_for_pdf(pdf_path: Path):
